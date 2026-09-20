@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: multicloud-platform-console
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: multicloud-platform-console
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: multicloud-platform-console
+        component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: multicloud-platform-console-frontend:latest
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 3
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "250m"
+              memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  type: LoadBalancer
+  selector:
+    app: multicloud-platform-console
+    component: frontend
+  ports:
+    - port: 80
+      targetPort: 80

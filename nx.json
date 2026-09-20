@@ -1,0 +1,8 @@
+{
+  "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "targetDefaults": {
+    "build": { "cache": true, "inputs": ["default", "^default"] },
+    "test": { "cache": true, "dependsOn": ["build"] },
+    "lint": { "cache": true }
+  }
+}

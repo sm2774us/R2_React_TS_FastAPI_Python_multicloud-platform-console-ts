@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - run: pip install ruff mypy pytest httpx websockets
+      - run: ruff check app
+      - run: mypy app --ignore-missing-imports
+      - run: pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install
+      - run: npm run lint
+      - run: npm run test:coverage
+      - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install backend deps
+        working-directory: apps/backend
+        run: pip install -r requirements.txt
+
+      - name: Start backend
+        working-directory: apps/backend
+        run: nohup python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8000/healthz && break
+            sleep 1
+          done
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install frontend deps
+        working-directory: apps/frontend
+        run: npm install
+      - name: Install Playwright browsers
+        working-directory: apps/frontend
+        run: npx playwright install --with-deps chromium
+      - name: Build frontend
+        working-directory: apps/frontend
+        run: npm run build
+      - name: Run Playwright E2E tests
+        working-directory: apps/frontend
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: apps/frontend/playwright-report/
+          retention-days: 7
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t multicloud-platform-console-backend:ci ./apps/backend
+      - run: docker build -t multicloud-platform-console-frontend:ci ./apps/frontend

@@ -1,0 +1,48 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+        files: ^apps/backend/
+      - id: ruff-format
+        files: ^apps/backend/
+
+  - repo: local
+    hooks:
+      - id: backend-mypy
+        name: backend-mypy
+        entry: bash -c 'cd apps/backend && .venv/bin/mypy app --ignore-missing-imports'
+        language: system
+        files: ^apps/backend/.*\.py$
+        pass_filenames: false
+
+      - id: frontend-eslint
+        name: frontend-eslint
+        entry: bash -c 'cd apps/frontend && npx eslint src --ext .ts,.tsx'
+        language: system
+        files: ^apps/frontend/.*\.(ts|tsx)$
+        pass_filenames: false
+
+      - id: hadolint-docker
+        name: hadolint-docker
+        entry: bash -c 'docker run --rm -i hadolint/hadolint < apps/backend/Dockerfile && docker run --rm -i hadolint/hadolint < apps/frontend/Dockerfile'
+        language: system
+        files: Dockerfile$
+        pass_filenames: false
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.1
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate

@@ -1,0 +1,15 @@
+{
+  "name": "multicloud-platform-console-ts",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["apps/frontend"],
+  "scripts": {
+    "frontend:dev": "nx run frontend:dev",
+    "frontend:build": "nx run frontend:build",
+    "frontend:lint": "nx run frontend:lint",
+    "frontend:test": "nx run frontend:test"
+  },
+  "devDependencies": {
+    "nx": "19.8.4"
+  }
+}
